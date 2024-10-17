@@ -2,8 +2,13 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { PaginationDto } from './dto/paginationDto';
+import { PaginationDto } from '../common/dto/paginationDto';
+import { Pagination } from 'src/users/interface/pagination.interface';
+import { Product } from './entities/product.entity';
 
+interface PaginatedProductsResponse extends Pagination{
+  products: Product[]
+}
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
@@ -14,7 +19,7 @@ export class ProductsController {
   }
 
   @Get()
-  findAll(@Query() paginationDto: PaginationDto) {
+  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedProductsResponse> {
     return this.productsService.findAll(paginationDto);
   }
 

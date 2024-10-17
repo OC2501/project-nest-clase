@@ -2,8 +2,14 @@ import { BadRequestException, Injectable, InternalServerErrorException, NotFound
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
-import { PaginationDto } from './dto/paginationDto';
+import { PaginationDto } from '../common/dto/paginationDto'
 
+export interface Pagination{
+  total: number;
+  limit: number;
+  page: number;
+  products: Product[]
+}
 @Injectable()
 export class ProductsService {
 
@@ -27,10 +33,27 @@ export class ProductsService {
     };
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<Product[]> {
+  async findAll(paginationDto: PaginationDto): Promise<Pagination> {
     try{
+      const {limit = 5, page = 0 } = paginationDto
       if( this.product.length === 0) throw new NotFoundException("no hay productos")
-        return this.product;
+      
+      const total = this.product.length;
+
+      const totalPages = Math.ceil(total/limit)
+
+      const safePages = Math.min(page, totalPages - 1)
+
+      const paginatedProducts = this.product.slice(safePages * limit, (safePages + 1) * limit);
+     
+      return {
+        total,
+        limit, 
+        page: safePages,
+        products: paginatedProducts
+      }
+
+
     }catch(error){
       throw new InternalServerErrorException("chequear la consola");
     }
