@@ -72,18 +72,23 @@ export class ProductsService {
   async update(id: number, updateProductDto: UpdateProductDto) {
     try{
       let productDB = this.product.find(product=> product.id === id); 
+
       if(!productDB) throw new NotFoundException("no se encuentra el producto")
 
-      this.product = this.product.map(product =>{
-        if(product.id === id){
-          productDB = {
-            ...productDB,
-            ...updateProductDto,
-          }
-          return productDB;
-        }
-        return product;
-      })
+    const updatedProduct = {
+      ...productDB,
+      ...updateProductDto
+    };
+
+    this.product = this.product.map(product => 
+      product.id === id ? updatedProduct : product
+    );
+
+    return {
+      message: `El producto con ID ${id} ha sido actualizado exitosamente`,
+      updatedProduct: updatedProduct
+    };
+
     }catch(error){
       throw new InternalServerErrorException("chequear la consola");
     }
@@ -91,9 +96,19 @@ export class ProductsService {
 
   async remove(id: number) {
     try{
-      const productDB = this.product.find(product => product.id === id);
-      if(!productDB) throw new NotFoundException("no se encuentra ese producto");
-      this.product.filter(product => product.id === id)
+      const index = this.product.findIndex(product => product.id === id);
+    
+      if (index === -1) {
+        throw new NotFoundException(`No se encontró un producto con el ID ${id}`);
+      }
+  
+      this.product.splice(index, 1);
+      
+      return {
+        message: `Producto con ID ${id} eliminado exitosamente`,
+        remainingProducts: this.product.length
+      };
+
     } catch(error){
       throw new InternalServerErrorException("chequear la consola")
     }
