@@ -22,5 +22,9 @@ export class CreateProductDto {
     @IsArray()
     photo: string[];
 
+    @IsNumber()
+    @IsNotEmpty()
+    categoryId: number;
+
     
 }

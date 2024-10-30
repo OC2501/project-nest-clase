@@ -3,17 +3,28 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 import { PaginationDto } from '../common/dto/paginationDto'
+import { CategoriasService } from 'src/categorias/categorias.service';
+import { Categoria } from 'src/categorias/entities/categoria.entity';
 
 export interface Pagination{
   total: number;
+  lastPage: number;
   limit: number;
   page: number;
   products: Product[]
 }
 @Injectable()
 export class ProductsService {
+  private products: Product[] = [
+    { id: 1, name: "product1", description: "desc1", photo: [], price: 12, stock: 5, isActive: true, categoryId: 1 },
+    { id: 2, name: "product2", description: "desc2", photo: [], price: 12, stock: 5, isActive: true, categoryId: 1 },
+    { id: 3, name: "product3", description: "desc3", photo: [], price: 12, stock: 5, isActive: true, categoryId: 1 },
+    { id: 4, name: "product4", description: "desc4", photo: [], price: 12, stock: 5, isActive: true, categoryId: 1 },
+  ]
+  constructor(
+    private readonly categoriasServices: CategoriasService
+  ){}
 
-  private product: Product[] = []
   create(createProductDto: CreateProductDto) {
     try{
       const product:Product = {
@@ -24,9 +35,9 @@ export class ProductsService {
 
       if(!product) throw new BadRequestException("PRODUCTO NO CREADO")
 
-      this.product.push({...product, id: this.product.length+1})
+      this.products.push({...product, id: this.products.length+1})
 
-      return this.product;
+      return this.products;
 
     }catch(error){
       throw new InternalServerErrorException("chequear la consola")
@@ -36,21 +47,23 @@ export class ProductsService {
   async findAll(paginationDto: PaginationDto): Promise<Pagination> {
     try{
       const {limit = 5, page = 0 } = paginationDto
-      if( this.product.length === 0) throw new NotFoundException("no hay productos")
+      if( this.products.length === 0) throw new NotFoundException("no hay productos")
       
-      const total = this.product.length;
+      const total = this.products.filter((product)=>product.isActive===(true)).length;
 
-      const totalPages = Math.ceil(total/limit)
+      const lastPage = Math.ceil(total/limit)
 
-      const safePages = Math.min(page, totalPages - 1)
+      const safePages = Math.min(page, lastPage - 1)
 
-      const paginatedProducts = this.product.slice(safePages * limit, (safePages + 1) * limit);
+      const paginatedProducts = this.products.slice(safePages * limit, (safePages + 1) * limit);
      
+      
       return {
         total,
         limit, 
-        page: safePages,
-        products: paginatedProducts
+        lastPage,
+        page: safePages + 1,
+        products: paginatedProducts,
       }
 
 
@@ -61,9 +74,13 @@ export class ProductsService {
 
   async findOne(id: number) {
     try{
-      const product = this.product.find(product => product.id === id);
+      const product = this.products.find(product => product.id === id);
       if(!product) throw new NotFoundException("no se encuentra el producto")
-        return product;
+      const category = this.categoriasServices.findOne(product.categoryId)
+      return {
+        product,
+        category
+      };
     }catch(error){
       throw new InternalServerErrorException("chequear la consola");
     }
@@ -71,7 +88,7 @@ export class ProductsService {
 
   async update(id: number, updateProductDto: UpdateProductDto) {
     try{
-      let productDB = this.product.find(product=> product.id === id); 
+      let productDB = this.products.find(product=> product.id === id); 
 
       if(!productDB) throw new NotFoundException("no se encuentra el producto")
 
@@ -80,7 +97,7 @@ export class ProductsService {
       ...updateProductDto
     };
 
-    this.product = this.product.map(product => 
+    this.products = this.products.map(product => 
       product.id === id ? updatedProduct : product
     );
 
@@ -96,17 +113,17 @@ export class ProductsService {
 
   async remove(id: number) {
     try{
-      const index = this.product.findIndex(product => product.id === id);
+      const index = this.products.findIndex(product => product.id === id);
     
       if (index === -1) {
         throw new NotFoundException(`No se encontró un producto con el ID ${id}`);
       }
   
-      this.product.splice(index, 1);
+      this.products.splice(index, 1);
       
       return {
         message: `Producto con ID ${id} eliminado exitosamente`,
-        remainingProducts: this.product.length
+        remainingProducts: this.products.length
       };
 
     } catch(error){

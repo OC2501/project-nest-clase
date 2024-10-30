@@ -6,4 +6,5 @@ export class Product {
     price: number;
     photo: string[];
     isActive: boolean = true;
+    categoryId: number
 }

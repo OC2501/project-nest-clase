@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, InternalServerErrorException, NotFound
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
+import { ManagerError } from 'src/common/errors/managererror';
 
 @Injectable()
 export class UsersService {
@@ -28,11 +29,14 @@ export class UsersService {
   async findAll(): Promise<UserEntity[]> {
     try {
       if( this.user.length === 0 ){
-        throw new NotFoundException("Users not found!");
+        throw new ManagerError({
+          type: 'NOT_FOUND',
+          message: 'products not found'
+        });
       }
       return this.user;
     } catch (error) {
-      throw new InternalServerErrorException("checks logs");
+      ManagerError.createSignatureError(error.message);
     }
   }
 
